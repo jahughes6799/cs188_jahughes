@@ -1,0 +1,22 @@
+[project]
+name = "api-activity"
+version = "1.0.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=3.1.0",
+    "flask-restful>=0.3.10",
+]
+
+[project.scripts]
+serve = "api_activity.app:create_and_serve"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+]
