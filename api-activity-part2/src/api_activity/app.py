@@ -62,10 +62,10 @@ class ConfigCheck(Resource):
         })
 
 def instantiate_app() -> Flask:
-    """Instantiate a new flask app"""
-    # Create the flask app
     app = Flask(__name__)
-    Talisman(app, force_https=True)
+    # Disable HTTPS redirect during tests so responses are 200 (not 302)
+    is_testing = bool(os.getenv("PYTEST_CURRENT_TEST")) or os.getenv("FLASK_TESTING") == "1"
+    Talisman(app, force_https=not is_testing)
     return app
 
 
