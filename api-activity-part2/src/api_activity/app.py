@@ -43,7 +43,23 @@ class Register(Resource):
         if not username or not password:
             return jsonify({"message": "username and password are required"}), 400
         return jsonify({"message": f"User {username} registered successfully"})
-
+    
+class ConfigCheck(Resource):
+    def get(self):
+        cs = os.getenv("SQL_CONNECTIONSTRING", "")
+        # mask password in any preview
+        parts = []
+        for p in cs.split(";"):
+            if not p:
+                continue
+            if p.lower().startswith("password="):
+                parts.append("Password=****")
+            else:
+                parts.append(p)
+        return jsonify({
+            "has_sql_connectionstring": bool(cs),
+            "connection_string_preview": ";".join(parts)[:160]
+        })
 
 def instantiate_app() -> Flask:
     """Instantiate a new flask app"""
@@ -64,6 +80,7 @@ def initialize_api(app: Flask) -> Api:
     api.add_resource(Square, "/square/<int:num>")
     api.add_resource(Echo, "/echo")
     api.add_resource(Register, "/register")
+    api.add_resource(ConfigCheck, "/config-check")
     return api
 
 
