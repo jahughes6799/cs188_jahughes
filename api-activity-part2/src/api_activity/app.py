@@ -1,4 +1,5 @@
 import os
+import pyodbc
 
 from flask import Flask, jsonify, request
 from flask_restful import Api, Resource, reqparse
@@ -61,6 +62,40 @@ class ConfigCheck(Resource):
             "connection_string_preview": ";".join(parts)[:160]
         })
 
+class DbPing(Resource):
+    def get(self):
+        cs = os.getenv("SQL_CONNECTIONSTRING", "")
+        if not cs:
+            return jsonify({"ok": False, "error": "SQL_CONNECTIONSTRING missing"}), 500
+
+        # Parse ADO.NET string into a dict
+        parts = {}
+        for seg in cs.split(";"):
+            if "=" in seg:
+                k, v = seg.split("=", 1)
+                parts[k.strip().lower()] = v.strip()
+
+        server = parts.get("server", "").replace("tcp:", "")
+        database = parts.get("initial catalog", "")
+        uid = parts.get("user id", "")
+        pwd = parts.get("password", "")
+
+        odbc_cs = (
+            "DRIVER={ODBC Driver 18 for SQL Server};"
+            f"SERVER={server};DATABASE={database};UID={uid};PWD={pwd};"
+            "Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30"
+        )
+
+        try:
+            with pyodbc.connect(odbc_cs) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT TOP 1 GETDATE()")
+                row = cur.fetchone()
+                return jsonify({"ok": True, "server_time": str(row[0])})
+        except Exception as e:
+            # Helpful message if local ODBC driver isn't installed
+            return jsonify({"ok": False, "error": str(e)}), 500
+
 def instantiate_app() -> Flask:
     app = Flask(__name__)
     # Disable HTTPS redirect during tests so responses are 200 (not 302)
@@ -81,6 +116,7 @@ def initialize_api(app: Flask) -> Api:
     api.add_resource(Echo, "/echo")
     api.add_resource(Register, "/register")
     api.add_resource(ConfigCheck, "/config-check")
+    api.add_resource(DbPing, "/db-ping")
     return api
 
 
