@@ -66,7 +66,7 @@ class DbPing(Resource):
     def get(self):
         cs = os.getenv("SQL_CONNECTIONSTRING", "")
         if not cs:
-            return jsonify({"ok": False, "error": "SQL_CONNECTIONSTRING missing"}), 500
+            return {"ok": False, "error": "SQL_CONNECTIONSTRING missing"}, 500
 
         # Parse ADO.NET string into a dict
         parts = {}
@@ -91,10 +91,10 @@ class DbPing(Resource):
                 cur = conn.cursor()
                 cur.execute("SELECT TOP 1 GETDATE()")
                 row = cur.fetchone()
-                return jsonify({"ok": True, "server_time": str(row[0])})
+                return {"ok": True, "server_time": str(row[0])}
         except Exception as e:
             # Helpful message if local ODBC driver isn't installed
-            return jsonify({"ok": False, "error": str(e)}), 500
+            return {"ok": False, "error": str(e)} , 500
 
 def instantiate_app() -> Flask:
     app = Flask(__name__)
